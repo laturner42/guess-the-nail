@@ -1,33 +1,29 @@
 const Jimp = require('jimp');
-// const input = require('./output.json');
 
-function hslToRgb(h, s, l){
-  var r, g, b;
+const rgb2lab = (rgb) => {
+  let r = rgb.r / 255;
+  let g = rgb.g / 255;
+  let b = rgb.b / 255;
+  let x;
+  let y;
+  let z;
 
-  if(s == 0){
-      r = g = b = l; // achromatic
-  }else{
-      var hue2rgb = function hue2rgb(p, q, t){
-          if(t < 0) t += 1;
-          if(t > 1) t -= 1;
-          if(t < 1/6) return p + (q - p) * 6 * t;
-          if(t < 1/2) return q;
-          if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-          return p;
-      }
+  r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+  g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+  b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
 
-      var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      var p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-  }
+  x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+  y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
+  z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
 
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  x = (x > 0.008856) ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+  y = (y > 0.008856) ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+  z = (z > 0.008856) ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+
+  return [(116 * y) - 16, 500 * (x - y), 200 * (y - z)]
 }
 
-const parseImage = async (input) => {
-  const { imgSrc, name } = input;
+const parseImage = async ({ imgSrc, name, brand }) => {
   const image = await Jimp.read(imgSrc);
   const colorCommonNess = {};
   const average = {r: 0, g: 0, b: 0};
@@ -65,36 +61,30 @@ const parseImage = async (input) => {
     },
     imgSrc,
     name,
-    brand: 'Color Street',
+    brand: brand || 'Color Street',
   }
 };
 
-// go().then(console.log);
-
-const makeColorImage = async () => {
-
-  const imgThing = await go();
-
-  const image = await Jimp.read('./images.jpeg');
-  const xStep = 0.5 / image.getWidth();
-  const yStep = 0.5 / image.getHeight();
-  for (let x=0; x<image.getWidth(); x++) {
-    for (let y=0; y<image.getHeight(); y++) {
-      const [r, g, b] = hslToRgb(0.25 + (x * xStep), 1, 0.25 + (y * yStep));
-      const hex = Jimp.rgbaToInt(r, g, b, 255);
-      const dist = Math.abs(imgThing.avgColor.r - r) + Math.abs(imgThing.avgColor.g - g) + Math.abs(imgThing.avgColor.b - b);
-      if (dist > 70) {
-        image.setPixelColor(hex, x, y);
-      } else {
-        image.setPixelColor(0, x, y);
-      }
-    }
-  }
-  await image.writeAsync('./saved.jpeg');
+const deltaE = (labA, labB) => {
+  const deltaL = labA[0] - labB[0];
+  const deltaA = labA[1] - labB[1];
+  const deltaB = labA[2] - labB[2];
+  const c1 = Math.sqrt(labA[1] * labA[1] + labA[2] * labA[2]);
+  const c2 = Math.sqrt(labB[1] * labB[1] + labB[2] * labB[2]);
+  const deltaC = c1 - c2;
+  let deltaH = deltaA * deltaA + deltaB * deltaB - deltaC * deltaC;
+  deltaH = deltaH < 0 ? 0 : Math.sqrt(deltaH);
+  const sc = 1.0 + 0.045 * c1;
+  const sh = 1.0 + 0.015 * c1;
+  const deltaLKlsl = deltaL / (1.0);
+  const deltaCkcsc = deltaC / (sc);
+  const deltaHkhsh = deltaH / (sh);
+  const i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh * deltaHkhsh;
+  return i < 0 ? 0 : Math.sqrt(i);
 }
-
-// makeColorImage();
 
 module.exports = {
   parseImage,
+  rgb2lab,
+  deltaE,
 }

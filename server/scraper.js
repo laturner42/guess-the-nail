@@ -3,26 +3,25 @@ const webdriver = require('selenium-webdriver');
 const { By } = require('selenium-webdriver');
 const fs = require('fs');
 
-const found = [];
+let driver;
 
-const numbers = [];
+// Color Street
+const scrapeColorStreet = async () => {
+  const found = [];
 
-for (let i=6126930; i<6127000; i++) {
-  numbers.push(i);
-}
+  const numbers = [];
 
-for (let i=6132600; i<6132700; i++) {
-  numbers.push(i);
-}
+  for (let i=6126930; i<6127000; i++) {
+    numbers.push(i);
+  }
 
-for (let i=6143150; i<6143250; i++) {
-  numbers.push(i);
-}
- 
-const scrape = async () => {
-  const driver = new webdriver.Builder().
-    withCapabilities(webdriver.Capabilities.chrome()).
-    build();
+  for (let i=6132600; i<6132700; i++) {
+    numbers.push(i);
+  }
+
+  for (let i=6143150; i<6143250; i++) {
+    numbers.push(i);
+  }
 
   for (let i=0; i<numbers.length; i++) {
     try {
@@ -43,9 +42,21 @@ const scrape = async () => {
       console.error(e);
     }
   }
-  driver.quit();
 
   fs.writeFileSync('output.json', JSON.stringify(found));
 };
 
-scrape();
+const go = async () => {
+  try {
+    driver = new webdriver.Builder().
+      withCapabilities(webdriver.Capabilities.chrome())
+      .build();
+    await scrapeColorStreet();
+  } catch (e) {
+    console.error(e)
+  } finally {
+    driver.quit();
+  }
+};
+
+go();

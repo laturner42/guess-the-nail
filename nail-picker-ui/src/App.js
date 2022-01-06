@@ -75,8 +75,8 @@ function App() {
       >
         <span>Name:</span>
         <input type="text" onChange={changeName} style={{ marginTop: 5 }} />
-        <button onClick={join} style={{ marginTop: 5 }}>Join</button>
-        {!socket && <span>not connected</span>}
+        <button disabled={!socket} onClick={join} style={{ marginTop: 5 }}>Join</button>
+        {!socket && <span style={{ color: 'red' }}>not connected<br />(try refreshing)</span>}
       </div>
     )
   };
@@ -161,14 +161,16 @@ function App() {
               </div>
             )
           }
-          {
-            gameData.guessing ?
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-around', marginTop: 10 }}>
-                <button onClick={sendChangeColor}>Lock In</button>
-                <button onClick={endRound}>End Round</button>
-              </div> :
-              <button onClick={startNextRound} style={{ marginTop: 10 }}>Next Round</button>
-          }
+          <div style={{ width: '100%', marginTop: 10 }}>
+            {
+              gameData.guessing ?
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-around' }}>
+                  <button onClick={sendChangeColor}>Lock In</button>
+                  <button onClick={endRound} disabled={gameData.leader !== myName}>End Round</button>
+                </div> :
+                <button onClick={startNextRound} disabled={gameData.leader !== myName}>Next Round</button>
+            }
+          </div>
         </div>
       </div>
     )
