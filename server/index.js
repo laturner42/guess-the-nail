@@ -1,10 +1,11 @@
 const http = require('http');
 const WebSocketServer = require('websocket').server;
-const { parseImage, rgb2lab, deltaE } = require('./colorParser');
+const { parseImage, rgb2lab, deltaE00 } = require('./colorParser');
 const { MessageTypes } = require('../nail-picker-ui/src/constants');
 const allColors = require('./output.json');
 
 // let nextIndex = -1;
+
 
 const connections = {};
 const players = {};
@@ -16,6 +17,7 @@ const gameState = {
   color: { r: 0, g: 0, b: 0 },
   colorName: 'Waiting',
   colorBrand: 'waiting',
+  startingScore: 500,
   leader: null,
 };
 
@@ -48,7 +50,7 @@ const updateEveryone = () => {
 const getDistance = (a, b) => {
   const labA = rgb2lab(a);
   const labB = rgb2lab(b);
-  return Math.floor(deltaE(labA, labB));
+  return Math.floor(deltaE00(labA, labB));
   // return Math.floor(Math.sqrt(
   //   (a.r - b.r) ** 2 +
   //   (a.g - b.g) ** 2 +
@@ -62,7 +64,7 @@ const endRound = () => {
     const { guess } = player;
     const distance = getDistance(guess, gameState.color);
     player.lastLoss = distance;
-    player.total += distance;
+    player.total -= (100 - distance);
   });
   updateEveryone();
 };
@@ -78,7 +80,7 @@ const playerJoin = (name) => {
     players[name] = {
       name,
       guess: { r: 0, g: 0, b: 0 },
-      total: 0,
+      total: gameState.startingScore,
       lastLoss: 0,
     }
   }
@@ -90,6 +92,7 @@ const parseMessage = async (data, connection) => {
   const { type, name } = data;
 
   if (!players[name]) {
+    console.debug(name, 'has joined');
     connections[name] = connection;
     playerJoin(name);
   }

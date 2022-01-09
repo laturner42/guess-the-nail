@@ -1,5 +1,74 @@
 const Jimp = require('jimp');
 
+const deltaE00 = ([l1, a1, b1], [l2, a2, b2]) => {
+  // Utility functions added to Math Object
+  Math.rad2deg = function(rad) {
+    return 360 * rad / (2 * Math.PI);
+  };
+  Math.deg2rad = function(deg) {
+    return (2 * Math.PI * deg) / 360;
+  };
+  // Start Equation
+  // Equation exist on the following URL http://www.brucelindbloom.com/index.html?Eqn_DeltaE_CIE2000.html
+  const avgL = (l1 + l2) / 2;
+  const c1 = Math.sqrt(Math.pow(a1, 2) + Math.pow(b1, 2));
+  const c2 = Math.sqrt(Math.pow(a2, 2) + Math.pow(b2, 2));
+  const avgC = (c1 + c2) / 2;
+  const g = (1 - Math.sqrt(Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7)))) / 2;
+
+  const a1p = a1 * (1 + g);
+  const a2p = a2 * (1 + g);
+
+  const c1p = Math.sqrt(Math.pow(a1p, 2) + Math.pow(b1, 2));
+  const c2p = Math.sqrt(Math.pow(a2p, 2) + Math.pow(b2, 2));
+
+  const avgCp = (c1p + c2p) / 2;
+
+  let h1p = Math.rad2deg(Math.atan2(b1, a1p));
+  if (h1p < 0) {
+    h1p = h1p + 360;
+  }
+
+  let h2p = Math.rad2deg(Math.atan2(b2, a2p));
+  if (h2p < 0) {
+    h2p = h2p + 360;
+  }
+
+  const avghp = Math.abs(h1p - h2p) > 180 ? (h1p + h2p + 360) / 2 : (h1p + h2p) / 2;
+
+  const t = 1 - 0.17 * Math.cos(Math.deg2rad(avghp - 30)) + 0.24 * Math.cos(Math.deg2rad(2 * avghp)) + 0.32 * Math.cos(Math.deg2rad(3 * avghp + 6)) - 0.2 * Math.cos(Math.deg2rad(4 * avghp - 63));
+
+  let deltahp = h2p - h1p;
+  if (Math.abs(deltahp) > 180) {
+    if (h2p <= h1p) {
+      deltahp += 360;
+    } else {
+      deltahp -= 360;
+    }
+  }
+
+  const deltalp = l2 - l1;
+  const deltacp = c2p - c1p;
+
+  deltahp = 2 * Math.sqrt(c1p * c2p) * Math.sin(Math.deg2rad(deltahp) / 2);
+
+  const sl = 1 + ((0.015 * Math.pow(avgL - 50, 2)) / Math.sqrt(20 + Math.pow(avgL - 50, 2)));
+  const sc = 1 + 0.045 * avgCp;
+  const sh = 1 + 0.015 * avgCp * t;
+
+  const deltaro = 30 * Math.exp(-(Math.pow((avghp - 275) / 25, 2)));
+  const rc = 2 * Math.sqrt(Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7)));
+  const rt = -rc * Math.sin(2 * Math.deg2rad(deltaro));
+
+  const kl = 1;
+  const kc = 1;
+  const kh = 1;
+
+  const deltaE = Math.sqrt(Math.pow(deltalp / (kl * sl), 2) + Math.pow(deltacp / (kc * sc), 2) + Math.pow(deltahp / (kh * sh), 2) + rt * (deltacp / (kc * sc)) * (deltahp / (kh * sh)));
+
+  return deltaE;
+}
+
 const rgb2lab = (rgb) => {
   let r = rgb.r / 255;
   let g = rgb.g / 255;
@@ -87,4 +156,5 @@ module.exports = {
   parseImage,
   rgb2lab,
   deltaE,
+  deltaE00,
 }

@@ -99,10 +99,10 @@ function App() {
                 borderColor: 'white',
                 borderWidth: 5,
                 padding: 1,
-                margin: 5,
+                margin: 3,
               }}
             >
-              <div style={{ margin: 10 }}>
+              <div style={{ margin: 10, marginTop: 5 }}>
                 <span>{player.name}</span>
                 <span style={{ fontSize: 10, color: '#bbb', marginLeft: 6 }}>{player.total} Δ</span>
               </div>
@@ -145,11 +145,15 @@ function App() {
                 onClick={() => setShowNail(!showNail)}
                 style={{
                   userSelect: 'none',
+                  width: 200,
+                  height: 200,
+                  overflow: 'hidden',
+                  borderRadius: 8,
                 }}
               >
                 {
                   showNail ?
-                    <img src={gameData.nailPhoto} width={200} height={200} style={{ margin: 0 }} /> :
+                    <img src={gameData.nailPhoto} width={200} height={200} /> :
                     <div
                       style={{
                         width: 200,
@@ -161,7 +165,7 @@ function App() {
               </div>
             )
           }
-          <div style={{ width: '100%', marginTop: 10 }}>
+          <div style={{ width: '100%', marginTop: gameData.guessing ? 10 : 1 }}>
             {
               gameData.guessing ?
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'space-around' }}>
