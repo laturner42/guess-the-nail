@@ -123,6 +123,6 @@ wsServer.on('request', (request) => {
     parseMessage(data, connection);
   });
   connection.on('close', (reasonCode, desc) => {
-    console.debug('Client lost');
+    console.debug('Client lost', reasonCode);
   })
 });
