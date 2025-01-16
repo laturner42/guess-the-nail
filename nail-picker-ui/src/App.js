@@ -1,8 +1,10 @@
 import { RgbColorPicker } from 'react-colorful';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MessageTypes } from './constants';
 
 import './App.css';
+
+const server = '192.168.4.36';
 
 function App() {
   const [socket, setSocket] = useState(null);
@@ -46,8 +48,8 @@ function App() {
     })
   }
 
-  const connect = () => {
-    const ws = new WebSocket('ws://96.32.184.58:9898/');
+  const connect = useCallback(() => {
+    const ws = new WebSocket(`ws://${server}:9898/`);
     ws.onopen = () => {
       setSocket(ws);
     };
@@ -58,7 +60,7 @@ function App() {
       setSocket(null);
       console.error(e);
     }
-  }
+  }, []);
 
   useEffect(() => {
     connect();
@@ -74,8 +76,8 @@ function App() {
         }}
       >
         <span>Name:</span>
-        <input type="text" onChange={changeName} style={{ marginTop: 5 }} />
-        <button disabled={!socket} onClick={join} style={{ marginTop: 5 }}>Join</button>
+        <input autoFocus type="text" onChange={changeName} style={{ marginTop: 5 }} />
+        <button disabled={!socket || !myName} onClick={join} style={{ marginTop: 5 }}>Join</button>
         {!socket && <span style={{ color: 'red' }}>not connected<br />(try refreshing)</span>}
       </div>
     )
@@ -85,50 +87,16 @@ function App() {
     return (
       <div
         style={{
+          flex: '1 0 0',
+          overflowY: 'hidden',
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: 'column',
+          gap: 20,
         }}
       >
-        <div>
-          {Object.values(gameData.players).sort((p1, p2) => p1.total - p2.total).map((player) => (
-            <div
-              style={{
-                minWidth: 200,
-                backgroundColor: '#666',
-                borderRadius: 10,
-                borderColor: 'white',
-                borderWidth: 5,
-                padding: 1,
-                margin: 3,
-              }}
-            >
-              <div style={{ margin: 10, marginTop: 5 }}>
-                <span>{player.name}</span>
-                <span style={{ fontSize: 10, color: '#bbb', marginLeft: 6 }}>{player.total} Δ</span>
-              </div>
-              <div
-                style={{
-                  borderRadius: 10,
-                  margin: 10,
-                  height: 40,
-                  backgroundColor: player.name === myName || !gameData.guessing ?
-                    `rgb(${player.guess.r},${player.guess.g},${player.guess.b})`
-                    : '#789',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {!gameData.guessing && <span>{player.lastLoss} Δ</span>}
-                {!!gameData.guessing && player.guess.r + player.guess.g + player.guess.b === 0 && <span>Waiting</span>}
-              </div>
-            </div>
-          ))}
-          {!socket && <span style={{ color: 'red' }}>Lost Connection</span>}
-        </div>
         <div
           style={{
-            marginLeft: 40,
+            flex: '1 0 auto',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -165,7 +133,7 @@ function App() {
               </div>
             )
           }
-          <div style={{ width: '100%', marginTop: gameData.guessing ? 10 : 1 }}>
+          <div style={{ width: '100%', marginTop: gameData.guessing ? 20 : 17 }}>
             {
               gameData.guessing ?
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'space-around' }}>
@@ -176,12 +144,49 @@ function App() {
             }
           </div>
         </div>
+        <div style={{ flex: '1 1 auto', overflowY: 'scroll' }}>
+          {Object.values(gameData.players).sort((p1, p2) => p1.total - p2.total).map((player) => (
+            <div
+              style={{
+                minWidth: 200,
+                backgroundColor: '#666',
+                borderRadius: 10,
+                borderColor: 'white',
+                borderWidth: 5,
+                padding: 1,
+                margin: 3,
+              }}
+            >
+              <div style={{ margin: 10, marginTop: 5 }}>
+                <span>{player.name}</span>
+                <span style={{ fontSize: 10, color: '#bbb', marginLeft: 6 }}>{player.total} Δ</span>
+              </div>
+              <div
+                style={{
+                  borderRadius: 10,
+                  margin: 10,
+                  height: 40,
+                  backgroundColor: player.name === myName || !gameData.guessing ?
+                    `rgb(${player.guess.r},${player.guess.g},${player.guess.b})`
+                    : '#789',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {!gameData.guessing && <span>{player.lastLoss} Δ</span>}
+                {!!gameData.guessing && player.guess.r + player.guess.g + player.guess.b === 0 && <span>Waiting</span>}
+              </div>
+            </div>
+          ))}
+          {!socket && <span style={{ color: 'red' }}>Lost Connection</span>}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="App-header">
+    <div className="App">
       {
         gameData ? renderGame() : askForName()
       }
